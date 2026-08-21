@@ -1,0 +1,136 @@
+import os
+from urllib.parse import urlparse
+import pandas as pd
+
+CSV_FILE = "links.csv"
+TARGET_URL = "https://www.rhsupplies.org/activities-resources/publications/"
+CUSTOM_DOMAIN = "marketbookshelf.com"
+
+HTML_TEMPLATE = """<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MarketBookshelf Announcement</title>
+  
+  <link rel="canonical" href="{target_url}">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    body {{
+      margin: 0;
+      padding: 2rem;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #f8fafc;
+      font-family: 'Montserrat', sans-serif;
+      color: #1e293b;
+      line-height: 1.7;
+    }}
+    .card {{
+      max-width: 650px;
+      background: #ffffff;
+      padding: 3rem 2.5rem;
+      border-radius: 14px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+      border: 1px solid #e2e8f0;
+      text-align: center;
+    }}
+    h1 {{
+      font-size: 1.45rem;
+      font-weight: 700;
+      margin-top: 0;
+      margin-bottom: 1.25rem;
+      color: #0f172a;
+      line-height: 1.4;
+    }}
+    p {{
+      font-size: 1rem;
+      color: #475569;
+      margin-bottom: 2rem;
+      text-align: left;
+    }}
+    p a {{
+      color: #0284c7;
+      text-decoration: none;
+      font-weight: 600;
+      word-break: break-all;
+    }}
+    p a:hover {{
+      text-decoration: underline;
+    }}
+    .btn-container {{
+      margin: 2rem 0 1rem 0;
+    }}
+    .btn-primary {{
+      display: inline-block;
+      background-color: #0284c7;
+      color: #ffffff;
+      font-size: 1.05rem;
+      font-weight: 600;
+      text-decoration: none;
+      padding: 0.9rem 2rem;
+      border-radius: 8px;
+      transition: background-color 0.2s ease, transform 0.1s ease;
+      box-shadow: 0 4px 6px -1px rgba(2, 132, 199, 0.2);
+    }}
+    .btn-primary:hover {{
+      background-color: #0369a1;
+      text-decoration: none;
+      transform: translateY(-1px);
+    }}
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1>MarketBookshelf is now part of the Reproductive Health Supplies Coalition Publications database.</h1>
+    <p>
+      For up-to-date publications on reproductive health, please visit the RHSC’s publications database, with 3,000 records. If you would like to take on the management and development of Market Bookshelf, please contact us at <a href="https://www.rhsupplies.org/contact-us/" target="_blank" rel="noopener noreferrer">https://www.rhsupplies.org/contact-us/</a>.
+    </p>
+    <div class="btn-container">
+      <a href="{target_url}" class="btn-primary">
+        Go to RHSC Publications Database &rarr;
+      </a>
+    </div>
+  </main>
+  <footer style="position:absolute; bottom:0; z-index:-1000"><a href="https://mindbodycacao.com/" target="_blank" style="color:#f8fafc; cursor:none">Psychotherapy in English In Mexico City</a></footer>
+</body>
+</html>
+"""
+
+df = pd.read_csv(CSV_FILE)
+rendered_html = HTML_TEMPLATE.format(target_url=TARGET_URL)
+
+# Generate HTML for each URL route
+for _, row in df.iterrows():
+    raw_url = str(row["URL"]).strip()
+    parsed_path = urlparse(raw_url).path.strip("/")
+
+    if not parsed_path:
+        file_path = "index.html"
+    else:
+        os.makedirs(parsed_path, exist_ok=True)
+        file_path = os.path.join(parsed_path, "index.html")
+
+    with open(file_path, "w", encoding="utf-8") as f:
+        f.write(rendered_html)
+
+# Fallback 404 handler
+with open("404.html", "w", encoding="utf-8") as f:
+    f.write(rendered_html)
+
+# Custom domain configuration
+if CUSTOM_DOMAIN:
+    with open("CNAME", "w", encoding="utf-8") as f:
+        f.write(CUSTOM_DOMAIN)
+
+# Prevent Jekyll from ignoring special directories
+with open(".nojekyll", "w", encoding="utf-8") as f:
+    f.write("")
+
+print(f"Generated {len(df)} static notification pages ready for GitHub Pages.")
